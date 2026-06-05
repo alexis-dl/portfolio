@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -29,13 +29,13 @@ jobs:
           node-version: 20
 
       - name: Build Chess
-        working-directory: chess/chess-front
+        working-directory: chess
         run: |
           npm ci
           npx ng build --base-href /portfolio/chess/
 
       - name: Build Pianoter
-        working-directory: pianoter/pianoter-front
+        working-directory: pianoter
         run: |
           npm ci
           npx ng build --base-href /portfolio/pianoter/
@@ -44,12 +44,12 @@ jobs:
         run: |
           mkdir -p dist
           cp index.html dist/
-          cp -r chess/chess-front/dist/chess-front/. dist/chess/
+          cp -r chess/dist/chess/. dist/chess/
           # Angular 18+ outputs to browser/ subdirectory
-          if [ -d pianoter/pianoter-front/dist/pianoter-front/browser ]; then
-            cp -r pianoter/pianoter-front/dist/pianoter-front/browser/. dist/pianoter/
+          if [ -d pianoter/dist/pianoter/browser ]; then
+            cp -r pianoter/dist/pianoter/browser/. dist/pianoter/
           else
-            cp -r pianoter/pianoter-front/dist/pianoter-front/. dist/pianoter/
+            cp -r pianoter/dist/pianoter/. dist/pianoter/
           fi
 
       - name: Upload Pages artifact
