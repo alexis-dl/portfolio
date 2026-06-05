@@ -1,0 +1,69 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout with submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build Chess
+        working-directory: chess/chess-front
+        run: |
+          npm ci
+          npx ng build --base-href /portfolio/chess/
+
+      - name: Build Pianoter
+        working-directory: pianoter/pianoter-front
+        run: |
+          npm ci
+          npx ng build --base-href /portfolio/pianoter/
+
+      - name: Assemble dist
+        run: |
+          mkdir -p dist
+          cp index.html dist/
+          cp -r chess/chess-front/dist/chess-front/. dist/chess/
+          # Angular 18+ outputs to browser/ subdirectory
+          if [ -d pianoter/pianoter-front/dist/pianoter-front/browser ]; then
+            cp -r pianoter/pianoter-front/dist/pianoter-front/browser/. dist/pianoter/
+          else
+            cp -r pianoter/pianoter-front/dist/pianoter-front/. dist/pianoter/
+          fi
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
